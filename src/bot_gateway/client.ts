@@ -3,6 +3,8 @@ import { CandidService } from "../candidService";
 import { type BotService, idlFactory } from "./candid/idl";
 import type { ExecuteBotCommandResponse, MessageContent } from "./candid/types";
 import { Secp256k1KeyIdentity } from "@dfinity/identity-secp256k1";
+import { DataClient } from "../data/data.client";
+import { Principal } from "@dfinity/principal";
 
 export type BotClientConfig = {
     botGatewayCanisterId: string;
@@ -16,7 +18,7 @@ export class BotClient extends CandidService {
     #agent: HttpAgent;
     #identity: Secp256k1KeyIdentity;
 
-    constructor(config: BotClientConfig) {
+    constructor(private config: BotClientConfig) {
         super();
         this.#identity = this.#createIdentity(config.identityPrivateKey);
         console.log("Principal: ", this.#identity.getPrincipal().toText());
@@ -45,23 +47,48 @@ export class BotClient extends CandidService {
     }
 
     sendImageMessage(
-        text: string,
         jwt: string,
         finalised: boolean,
+        imageData: Uint8Array,
+        mimeType: string,
+        width: number,
+        height: number,
+        caption?: string,
     ): Promise<ExecuteBotCommandResponse> {
-        return this.executeCommand(
-            jwt,
-            {
-                Text: { text },
-            },
-            finalised,
+        const dataClient = new DataClient(this.#agent, this.config);
+        const uploadContentPromise = dataClient.uploadData(
+            ["todo need the groupid or something"],
+            mimeType,
+            imageData,
         );
+
+        return uploadContentPromise.then((blobRef) => {
+            return this.executeCommand(
+                jwt,
+                {
+                    Image: {
+                        height,
+                        mime_type: mimeType,
+                        blob_reference: [
+                            {
+                                blob_id: blobRef.blobId,
+                                canister_id: Principal.fromText(blobRef.canisterId),
+                            },
+                        ],
+                        thumbnail_data: "",
+                        caption: caption ? [caption] : [],
+                        width,
+                    },
+                },
+                finalised,
+            );
+        });
     }
 
     sendTextMessage(
-        text: string,
         jwt: string,
         finalised: boolean,
+        text: string,
     ): Promise<ExecuteBotCommandResponse> {
         return this.executeCommand(
             jwt,
