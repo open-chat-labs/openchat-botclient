@@ -1,6 +1,6 @@
 {
     "name": "@open-ic/openchat-botclient",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "A client library for OpenChat bots to interact with the OpenChat backend",
     "main": "lib/index.cjs",
     "module": "lib/index.mjs",
@@ -25,6 +25,7 @@
         "@dfinity/agent": "^2.2.0",
         "@dfinity/candid": "^2.2.0",
         "@dfinity/identity-secp256k1": "^2.2.0",
-        "@dfinity/principal": "^2.2.0"
+        "@dfinity/principal": "^2.2.0",
+        "js-sha3": "^0.9.3"
     }
 }
