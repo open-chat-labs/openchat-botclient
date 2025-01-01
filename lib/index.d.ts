@@ -1,1 +1,1 @@
-export { BotClient } from "./client";
+export { BotClient } from "./bot_gateway/client";

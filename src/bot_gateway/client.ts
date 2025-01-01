@@ -49,6 +49,7 @@ export class BotClient extends CandidService {
     sendImageMessage(
         jwt: string,
         finalised: boolean,
+        canisterId: string,
         imageData: Uint8Array,
         mimeType: string,
         width: number,
@@ -56,11 +57,7 @@ export class BotClient extends CandidService {
         caption?: string,
     ): Promise<ExecuteBotCommandResponse> {
         const dataClient = new DataClient(this.#agent, this.config);
-        const uploadContentPromise = dataClient.uploadData(
-            ["todo need the groupid or something"],
-            mimeType,
-            imageData,
-        );
+        const uploadContentPromise = dataClient.uploadData([canisterId], mimeType, imageData);
 
         return uploadContentPromise.then((blobRef) => {
             return this.executeCommand(
