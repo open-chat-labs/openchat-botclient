@@ -5,12 +5,14 @@ import type { ExecuteBotCommandResponse, MessageContent } from "./candid/types";
 import { Secp256k1KeyIdentity } from "@dfinity/identity-secp256k1";
 import { DataClient } from "../data/data.client";
 import { Principal } from "@dfinity/principal";
+import type { Chat } from "../storageIndex/candid/types";
 
 export type BotClientConfig = {
     botGatewayCanisterId: string;
     openStorageCanisterId: string;
     icHost: string;
     identityPrivateKey: string;
+    chatId: Chat;
 };
 
 export class BotClient extends CandidService {
@@ -46,10 +48,18 @@ export class BotClient extends CandidService {
         }
     }
 
+    #extractCanisterFromChat() {
+        if ("Group" in this.config.chatId) {
+            return this.config.chatId.Group.toString();
+        } else if ("Channel" in this.config.chatId) {
+            return this.config.chatId.Channel[0].toString();
+        }
+        return "";
+    }
+
     sendImageMessage(
         jwt: string,
         finalised: boolean,
-        canisterId: string,
         imageData: Uint8Array,
         mimeType: string,
         width: number,
@@ -57,6 +67,8 @@ export class BotClient extends CandidService {
         caption?: string,
     ): Promise<ExecuteBotCommandResponse> {
         const dataClient = new DataClient(this.#agent, this.config);
+        const canisterId = this.#extractCanisterFromChat();
+        console.log("Upload canister: ", canisterId);
         const uploadContentPromise = dataClient.uploadData([canisterId], mimeType, imageData);
 
         return uploadContentPromise.then((blobRef) => {
