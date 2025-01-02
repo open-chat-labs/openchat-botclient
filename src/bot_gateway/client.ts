@@ -57,6 +57,41 @@ export class BotClient extends CandidService {
         return "";
     }
 
+    sendFileMessage(
+        jwt: string,
+        finalised: boolean,
+        name: string,
+        data: Uint8Array,
+        mimeType: string,
+        fileSize: number,
+        caption?: string,
+    ): Promise<ExecuteBotCommandResponse> {
+        const dataClient = new DataClient(this.#agent, this.config);
+        const canisterId = this.#extractCanisterFromChat();
+        const uploadContentPromise = dataClient.uploadData([canisterId], mimeType, data);
+
+        return uploadContentPromise.then((blobRef) => {
+            return this.executeCommand(
+                jwt,
+                {
+                    File: {
+                        name,
+                        file_size: fileSize,
+                        mime_type: mimeType,
+                        blob_reference: [
+                            {
+                                blob_id: blobRef.blobId,
+                                canister_id: Principal.fromText(blobRef.canisterId),
+                            },
+                        ],
+                        caption: caption ? [caption] : [],
+                    },
+                },
+                finalised,
+            );
+        });
+    }
+
     sendImageMessage(
         jwt: string,
         finalised: boolean,
@@ -125,12 +160,12 @@ export class BotClient extends CandidService {
             }),
             (res) => {
                 if (!("Ok" in res)) {
-                    console.log("Hurrah!");
+                    console.error("Call to execute_command failed with: ", JSON.stringify(res));
                 }
                 return res;
             },
         ).catch((err) => {
-            console.error("Call to execute_command failed with: ", err);
+            console.error("Call to execute_command failed with: ", JSON.stringify(err));
             throw err;
         });
     }
